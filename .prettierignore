@@ -1,0 +1,6 @@
+# Prettier also skips everything in .gitignore.
+# Rust has rustfmt; Markdown and workflow files are kept by hand.
+src-tauri/
+package-lock.json
+*.md
+*.yml

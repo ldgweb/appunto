@@ -1,0 +1,25 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.local
+src-tauri/target/
+src-tauri/gen/
+
+# Written by scripts/audit-rust.mjs and scripts/collect-release.mjs
+/audit-results/
+/release-files/
+/release-portable/
+
+# Local credentials and editor state
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.log
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

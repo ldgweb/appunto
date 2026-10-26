@@ -1,0 +1,75 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Appunto",
+  "version": "0.1.0",
+  "identifier": "io.github.ldgweb.appunto",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5174",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Appunto",
+        "width": 420,
+        "height": 480,
+        "minWidth": 260,
+        "minHeight": 180,
+        "center": true,
+        "decorations": false,
+        "visible": false,
+        "resizable": true,
+        "shadow": true,
+        "dragDropEnabled": false,
+        "backgroundColor": "#141615"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'",
+      "devCsp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost ws://localhost:5174; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "app", "dmg", "deb", "rpm", "appimage"],
+    "publisher": "Lucio (ldgweb)",
+    "copyright": "Copyright (c) 2026 Lucio (ldgweb)",
+    "homepage": "https://github.com/ldgweb/appunto",
+    "license": "MIT",
+    "category": "Productivity",
+    "shortDescription": "Quick notes and sketches, one shortcut away",
+    "longDescription": "A tiny blackboard that lives in the background. Press one shortcut from any app, jot a note or a quick sketch, press it again and get back to work. Everything is saved as you type.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../LICENSE.md": "LICENSE.md",
+      "../THIRD-PARTY-NOTICES.md": "THIRD-PARTY-NOTICES.md"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libayatana-appindicator3-1"]
+      },
+      "rpm": {
+        "depends": ["libayatana-appindicator-gtk3"]
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "-"
+    }
+  }
+}

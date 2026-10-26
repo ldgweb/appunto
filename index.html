@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" href="data:," />
+    <title>Appunto</title>
+  </head>
+  <body>
+    <div id="app" class="app">
+      <header class="bar" data-tauri-drag-region>
+        <span id="save-dot" class="save-dot" data-state="saved" role="status"></span>
+        <div class="tools" role="toolbar">
+          <button id="tool-pen" class="icon-btn" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 20l1.1-4.2L16.4 4.5a2 2 0 0 1 2.8 0l.3.3a2 2 0 0 1 0 2.8L8.2 18.9 4 20z" />
+              <path d="M14.5 6.4l3.1 3.1" />
+            </svg>
+          </button>
+          <button id="tool-eraser" class="icon-btn" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 19.5h11" />
+              <path
+                d="M5.4 14.6l8.9-8.9a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L11 19.1a1.4 1.4 0 0 1-1 .4H7.9a1.4 1.4 0 0 1-1-.4l-1.5-1.5a2.2 2.2 0 0 1 0-3z"
+              />
+              <path d="M9.6 10.4l5 5" />
+            </svg>
+          </button>
+          <button id="tool-pen-style" class="icon-btn" type="button" aria-haspopup="dialog" aria-expanded="false">
+            <span class="pen-swatch" aria-hidden="true"></span>
+          </button>
+          <span class="divider" aria-hidden="true"></span>
+          <button id="tool-font" class="icon-btn text-btn" type="button" aria-haspopup="dialog" aria-expanded="false">
+            Aa
+          </button>
+          <button id="tool-smaller" class="icon-btn optional" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
+          </button>
+          <span id="size" class="size optional">22</span>
+          <button id="tool-larger" class="icon-btn optional" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12" /></svg>
+          </button>
+        </div>
+        <div class="grip" data-tauri-drag-region></div>
+        <div class="tools">
+          <button id="tool-scratch" class="icon-btn" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="5" y="3.5" width="14" height="17" rx="2" stroke-dasharray="3 2.2" />
+              <path d="M9 9h6M9 13h4" />
+            </svg>
+          </button>
+          <button id="tool-pin" class="icon-btn" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 3.5h6l-.9 5.2 3.4 3.6v1.6H6.5v-1.6l3.4-3.6L9 3.5z" />
+              <path d="M12 13.9v6.6" />
+            </svg>
+          </button>
+          <button id="tool-settings" class="icon-btn" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+              <circle cx="15" cy="7" r="2" />
+              <circle cx="9" cy="17" r="2" />
+            </svg>
+          </button>
+          <button id="tool-hide" class="icon-btn" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" /></svg>
+          </button>
+        </div>
+      </header>
+      <main id="board" class="board">
+        <textarea
+          id="text"
+          class="text"
+          spellcheck="false"
+          autocomplete="off"
+          autocapitalize="off"
+          autocorrect="off"
+          wrap="soft"
+        ></textarea>
+        <canvas id="ink" class="ink" aria-hidden="true"></canvas>
+        <canvas id="live" class="ink live" aria-hidden="true"></canvas>
+        <textarea
+          id="scratch"
+          class="text scratch"
+          spellcheck="false"
+          autocomplete="off"
+          autocapitalize="off"
+          autocorrect="off"
+          wrap="soft"
+        ></textarea>
+      </main>
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

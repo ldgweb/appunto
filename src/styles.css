@@ -1,0 +1,751 @@
+/* Flat surfaces, thin lines, shadows only on things that float. Board colors
+   come from the theme (set from main.ts); the chrome adapts to dark or light. */
+
+:root {
+  --board: #141615;
+  --chalk: #ecebe4;
+  --pen: #ecebe4;
+  --font: 'Patrick Hand', cursive;
+  --size: 22px;
+  --ui-font: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  --fg: #ecebe4;
+  --muted: rgba(236, 235, 228, 0.5);
+  --faint: rgba(236, 235, 228, 0.1);
+  --line: rgba(236, 235, 228, 0.1);
+  --hover: rgba(236, 235, 228, 0.07);
+  --selected: rgba(236, 235, 228, 0.12);
+  --surface: #1e211f;
+  --accent: #f5c451;
+  --warn: #ffb38a;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --fg: #1f2328;
+  --muted: rgba(31, 35, 40, 0.58);
+  --faint: rgba(31, 35, 40, 0.08);
+  --line: rgba(31, 35, 40, 0.12);
+  --hover: rgba(31, 35, 40, 0.06);
+  --selected: rgba(31, 35, 40, 0.09);
+  --surface: #ffffff;
+  --accent: #a16207;
+  --warn: #b42318;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--board);
+  color: var(--fg);
+  font: 13px/1.4 var(--ui-font);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Toolbar: also the handle to move the window. */
+
+.bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  padding: 0 4px 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.grip {
+  flex: 1;
+  align-self: stretch;
+  min-width: 12px;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+}
+
+.icon-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.icon-btn[aria-pressed='true'],
+.icon-btn[aria-expanded='true'] {
+  background: var(--selected);
+  border-color: var(--line);
+  color: var(--fg);
+}
+
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.text-btn {
+  width: auto;
+  min-width: 32px;
+  padding: 0 6px;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pen-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--pen);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.size {
+  min-width: 24px;
+  color: var(--muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 5px;
+  background: var(--line);
+}
+
+.save-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--faint);
+  transition: background-color 0.4s;
+}
+
+.save-dot[data-state='pending'] {
+  background: var(--muted);
+}
+
+.save-dot[data-state='failed'],
+.save-dot[data-state='blocked'] {
+  background: var(--warn);
+}
+
+@media (max-width: 340px) {
+  .optional {
+    display: none;
+  }
+}
+
+/* The board: text, with two canvases on top for the drawing. */
+
+.board {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.text {
+  position: absolute;
+  inset: 0;
+  display: block;
+  margin: 0;
+  padding: 12px 16px 28px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--chalk);
+  caret-color: var(--accent);
+  font-family: var(--font);
+  font-size: var(--size);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+  overflow-y: auto;
+  tab-size: 4;
+  user-select: text;
+  -webkit-user-select: text;
+  scrollbar-width: thin;
+  scrollbar-color: var(--faint) transparent;
+}
+
+.text::placeholder {
+  color: var(--muted);
+}
+
+.text::selection {
+  background: rgba(245, 196, 81, 0.3);
+}
+
+.text::-webkit-scrollbar,
+.panel::-webkit-scrollbar,
+.popover::-webkit-scrollbar,
+.pop-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.text::-webkit-scrollbar-thumb,
+.panel::-webkit-scrollbar-thumb,
+.popover::-webkit-scrollbar-thumb,
+.pop-scroll::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: var(--faint);
+}
+
+.panel,
+.popover,
+.pop-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--faint) transparent;
+}
+
+.ink {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The scratch pad covers the board. A dashed edge says it is not the board. */
+
+.scratch {
+  visibility: hidden;
+  outline: 1px dashed var(--muted);
+  outline-offset: -6px;
+}
+
+.app.on-scratch .scratch {
+  visibility: visible;
+}
+
+.app.on-scratch #text,
+.app.on-scratch .ink {
+  visibility: hidden;
+}
+
+.save-dot[data-state='scratch'] {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--muted);
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  background: none;
+  color: var(--muted);
+}
+
+.app.drawing .live {
+  pointer-events: auto;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.app.drawing.erasing .live {
+  cursor: none;
+}
+
+/* Popovers. */
+
+.popover {
+  position: fixed;
+  z-index: 20;
+  width: max-content;
+  min-width: 210px;
+  max-width: min(300px, calc(100vw - 16px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.pop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pop-scroll {
+  max-height: 180px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.pop-option {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  font-size: 17px;
+  line-height: 1.3;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pop-option:hover {
+  background: var(--hover);
+}
+
+.pop-option[aria-selected='true'] {
+  background: var(--selected);
+  border-color: var(--line);
+}
+
+.pop-sep {
+  height: 1px;
+  margin: 6px 2px;
+  background: var(--line);
+}
+
+.pop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+}
+
+.pop-label {
+  color: var(--muted);
+}
+
+.pop-row input[type='range'] {
+  flex: 1;
+  min-width: 90px;
+  accent-color: var(--accent);
+}
+
+.pop-value {
+  min-width: 22px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pop-search {
+  width: 100%;
+  height: 30px;
+  margin-top: 4px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--faint);
+  outline: none;
+}
+
+.pop-search:focus {
+  border-color: var(--accent);
+}
+
+.pop-note {
+  padding: 6px 8px;
+  color: var(--muted);
+}
+
+.pop-link,
+.link {
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.pop-link {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.pop-link:hover,
+.link:hover {
+  color: var(--fg);
+}
+
+.pop-link:hover {
+  background: var(--hover);
+}
+
+.pop-link:disabled {
+  opacity: 0.45;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 4px;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.swatch[aria-checked='true'] {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.sizes {
+  display: flex;
+  gap: 4px;
+  padding: 2px;
+}
+
+.size-option {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+}
+
+.size-option:hover {
+  background: var(--hover);
+}
+
+.size-option[aria-checked='true'] {
+  background: var(--selected);
+  border-color: var(--line);
+}
+
+.size-dot {
+  width: var(--d);
+  height: var(--d);
+  border-radius: 50%;
+  background: var(--pen);
+}
+
+/* Settings: a sheet over the board. Sections are a title with a line under it. */
+
+.panel {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  overflow-y: auto;
+  padding: 6px 16px 20px;
+  background: var(--board);
+  user-select: none;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+}
+
+.panel h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.panel h2 {
+  margin: 18px 0 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+}
+
+.row-label {
+  min-width: 0;
+}
+
+.row-button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.row-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: background-color 0.15s;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition:
+    transform 0.15s,
+    background-color 0.15s;
+}
+
+[aria-checked='true'] > .switch {
+  background: var(--accent);
+}
+
+[aria-checked='true'] > .switch::after {
+  background: var(--board);
+  transform: translateX(12px);
+}
+
+.key-btn {
+  flex: none;
+  min-width: 120px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--faint);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.key-btn:hover {
+  background: var(--selected);
+}
+
+.key-btn.recording {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.themes {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--c);
+}
+
+.theme-swatch[aria-checked='true'] {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.select {
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: none;
+}
+
+.btn:hover {
+  background: var(--hover);
+}
+
+.btn.quiet {
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.btn.quiet:hover {
+  color: var(--fg);
+}
+
+.note {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 12px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.note.warn {
+  color: var(--warn);
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  margin: 8px 0 0;
+}
+
+.keys dt,
+.keys dd {
+  margin: 0;
+}
+
+.keys dd {
+  color: var(--muted);
+}
+
+kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--faint);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  white-space: pre;
+}
+
+/* One message at a time, at the bottom. */
+
+.toast {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 12.5px;
+  transform: translateX(-50%);
+}
+
+.toast[hidden] {
+  display: none;
+}
+
+.toast button {
+  flex: none;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.toast button:hover {
+  background: var(--hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
